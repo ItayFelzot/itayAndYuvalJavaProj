@@ -7,150 +7,197 @@ public class Lecturer {
     private Degree degree;
     private String degreeName;
     private float salary;
-    private Department department=null;
-    private int amountOfComittees=0;
-    private Comittee[] comittees=new Comittee[1];
-    public Lecturer(String name, String id, Degree degree, String degreeName, float salary) {
-        this.setName(name);
-        boolean flag = this.setId(id);
-        if (flag == false) {
-            this.id = "-1";
-        }
-        this.setDegree(degree);
-        this.setDegreeName(degreeName);
-        flag= this.setSalary(salary);
-        if (flag == false) {
-            this.salary = -1;
+    private Department department = null;
+    private int amountOfCommittees = 0;
+    private Committee[] committees = new Committee[1];
+
+    public Lecturer(String name, String id, Degree degree, String degreeName, float salary) throws CollegeException {
+        setName(name);
+        setId(id);
+        setDegree(degree);
+        setDegreeName(degreeName);
+        setSalary(salary);
+    }
+
+    public Lecturer(Lecturer lecturer) throws CollegeException {
+        if (lecturer != null) {
+            setName(lecturer.getName());
+            setId(lecturer.getId());
+            setDegree(lecturer.getDegree());
+            setDegreeName(lecturer.getDegreeName());
+            setSalary(lecturer.getSalary());
+            setDepartment(lecturer.getDepartment());
+            setCommittees(lecturer.getCommittees());
         }
     }
-    public Lecturer(Lecturer l) {
-        if (l!=null)
-        {
-        this.setName(l.getName());
-        this.setId(l.getId());
-        this.setDegree(l.getDegree());
-        this.setDegreeName(l.getDegreeName());
-        this.setSalary(l.getSalary());
-        this.setDepartment(l.getDepartment());
-        this.setComittees(l.getComittees());
-        }
-    }
-    public void setComittees(Comittee[] comittees) {
-        if (comittees == null) 
-            return;
-        this.comittees = new Comittee[comittees.length];
-        int amount=0;
-        for (int i = 0; i < comittees.length; i++) {
-            this.comittees[i] = comittees[i];
-            if (this.comittees[i] != null)
-                amount++;
-        }
-        this.amountOfComittees = amount;
-    }
-    public void addComitteeToLecturer(Comittee c) {
-        if (c == null)
-            return;
-        for (int i = 0; i < this.amountOfComittees; i++) {
-            if (this.comittees[i] != null && this.comittees[i].getName().equals(c.getName()))
-                return;
-        }
-        Comittee[] newComittees;
-        if (this.comittees.length == this.amountOfComittees)
-            newComittees = new Comittee[Math.max(1, this.amountOfComittees*2)];
-        else
-            newComittees = new Comittee[this.comittees.length];
-        for (int i = 0; i < this.amountOfComittees; i++) {
-            newComittees[i] = comittees[i];
-        }
-        newComittees[this.amountOfComittees] = c;
-        this.comittees = newComittees;
-        this.amountOfComittees++;
-    }
-    public boolean removeComitteeFromLecturer(Comittee c) {
-        if (c == null)
-            return false;
-        Comittee[] newComittees = new Comittee[Math.max(1, this.amountOfComittees)];
-        int j = 0;
-        for (int i = 0; i < this.amountOfComittees; i++) {
-            if (this.comittees[i] == null) continue;
-            if (!comittees[i].getName().equals(c.getName())) {
-                newComittees[j] = comittees[i];
-                j++;
-            }
-        }
-        this.comittees = newComittees;
-        this.amountOfComittees = j;
-        return true;
-    }
+
     public Lecturer() {
     }
+
     public String getName() {
         return name;
     }
+
     public String getId() {
         return id;
     }
+
     public Degree getDegree() {
         return degree;
     }
+
     public String getDegreeName() {
         return degreeName;
     }
+
     public float getSalary() {
         return salary;
     }
+
     public Department getDepartment() {
         return department;
     }
+
+    public Committee[] getCommittees() {
+        return committees;
+    }
+
+    public int getAmountOfCommittees() {
+        return amountOfCommittees;
+    }
+
+    public boolean belongsToAnyCommittee() {
+        return amountOfCommittees > 0;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
-    public Comittee[] getComittees() {
-        return comittees;
+
+    public void setCommittees(Committee[] committees) {
+        if (committees == null) {
+            return;
+        }
+        this.committees = new Committee[Math.max(1, committees.length)];
+        int amount = 0;
+        for (int i = 0; i < committees.length; i++) {
+            this.committees[i] = committees[i];
+            if (this.committees[i] != null) {
+                amount++;
+            }
+        }
+        this.amountOfCommittees = amount;
     }
-    public int getAmountOfComittees() {
-        return amountOfComittees;
+
+    public void addCommitteeToLecturer(Committee committee) throws CollegeException {
+        if (committee == null) {
+            throw new InvalidCommitteeException();
+        }
+        for (int i = 0; i < this.amountOfCommittees; i++) {
+            if (this.committees[i] != null && this.committees[i].getName().equals(committee.getName())) {
+                throw new LecturerAlreadyInCommitteeException();
+            }
+        }
+        Committee[] newCommittees;
+        if (this.committees.length == this.amountOfCommittees) {
+            newCommittees = new Committee[Math.max(1, this.amountOfCommittees * 2)];
+        } else {
+            newCommittees = new Committee[this.committees.length];
+        }
+        for (int i = 0; i < this.amountOfCommittees; i++) {
+            newCommittees[i] = committees[i];
+        }
+        newCommittees[this.amountOfCommittees] = committee;
+        this.committees = newCommittees;
+        this.amountOfCommittees++;
     }
-    public boolean setId(String id) {
+
+    public void removeCommitteeFromLecturer(Committee committee) throws CollegeException {
+        if (committee == null) {
+            throw new InvalidCommitteeException();
+        }
+        boolean found = false;
+        Committee[] newCommittees = new Committee[Math.max(1, this.amountOfCommittees)];
+        int j = 0;
+        for (int i = 0; i < this.amountOfCommittees; i++) {
+            if (this.committees[i] == null) {
+                continue;
+            }
+            if (!this.committees[i].getName().equals(committee.getName())) {
+                newCommittees[j] = committees[i];
+                j++;
+            } else {
+                found = true;
+            }
+        }
+        if (!found) {
+            throw new LecturerNotInCommitteeException();
+        }
+        this.committees = newCommittees;
+        this.amountOfCommittees = j;
+    }
+
+    public void setId(String id) throws InvalidIdException {
         if (id != null && id.length() > 0) {
             for (int i = 0; i < id.length(); i++) {
                 if (id.charAt(i) < '0' || id.charAt(i) > '9') {
-                    return false;
+                    throw new InvalidIdException();
                 }
             }
             this.id = id;
-            return true;
+            return;
         }
-        return false;
+        throw new InvalidIdException();
     }
-    public void setDegree(Degree degree) {
+
+    public void setDegree(Degree degree) throws InvalidDegreeException {
+        if (degree == null) {
+            throw new InvalidDegreeException();
+        }
         this.degree = degree;
     }
+
     public void setDegreeName(String degreeName) {
         this.degreeName = degreeName;
     }
-    public boolean setSalary(float salary) {
-        if (salary >= 0) {
-            this.salary = salary;
-            return true;
+
+    public void setSalary(float salary) throws InvalidSalaryException {
+        if (salary < 0) {
+            throw new InvalidSalaryException();
         }
-        return false;
+        this.salary = salary;
     }
+
     public void setDepartment(Department department) {
         this.department = department;
     }
-    public String toString() {
-        StringBuffer sB= new StringBuffer ("Name: " + name + "\nId: " + id + "\nDegree: " + degree + "\nDegree Name: " + degreeName + "\nSalary: " + salary);
-        if (this.department != null) {
-            sB.append("\nDepartment: " + department.toString());
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof Lecturer)) {
+            return false;
         }
-        if (this.comittees != null && this.amountOfComittees > 0) {
-            sB.append("\nComittees he is in: ");
-            for (int i = 0; i < this.amountOfComittees; i++) {
-                if (this.comittees[i] != null)
-                    sB.append(this.comittees[i].getName()).append(", ");
+        Lecturer otherLecturer = (Lecturer) other;
+        return id != null && id.equals(otherLecturer.getId());
+    }
+
+    @Override
+    public String toString() {
+        StringBuffer info = new StringBuffer("Name: " + name + "\nId: " + id + "\nDegree: " + degree + "\nDegree Name: " + degreeName + "\nSalary: " + salary);
+        if (this.department != null) {
+            info.append("\nDepartment: ").append(department.getName());
+        }
+        if (this.committees != null && this.amountOfCommittees > 0) {
+            info.append("\nCommittees he is in: ");
+            for (int i = 0; i < this.amountOfCommittees; i++) {
+                if (this.committees[i] != null) {
+                    if (committees[i].getHeadOfCommittee() != null && committees[i].getHeadOfCommittee().equals(this)) {
+                        info.append("Head of ");
+                    }
+                    info.append(this.committees[i].getName()).append(", ");
+                }
             }
         }
-        return sB.toString();
+        return info.toString();
     }
 }

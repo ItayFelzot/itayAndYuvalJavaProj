@@ -1,95 +1,123 @@
 package YuvalDahan_ItayFelzot;
+
 public class Department {
     private String name;
-    private int amountOfLecturers=0;
-    private Lecturer[] lecturers=new Lecturer[1];
+    private int amountOfLecturers = 0;
+    private Lecturer[] lecturers = new Lecturer[1];
+
     public Department(String name) {
-        this.setName(name);
+        setName(name);
     }
-    public Department(Department d) {
-        this.setName(d.getName());
-        this.setLecturers(d.getLecturers());
+
+    public Department(Department department) {
+        setName(department.getName());
+        setLecturers(department.getLecturers());
     }
+
     public String getName() {
         return name;
     }
+
     public int getAmountOfLecturers() {
         return amountOfLecturers;
     }
+
     public Lecturer[] getLecturers() {
         return lecturers;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public void setLecturers(Lecturer[] lecturers) {
-        if (lecturers == null)
+        if (lecturers == null) {
             return;
-        this.lecturers = new Lecturer[lecturers.length];
-        int amount=0;
+        }
+        this.lecturers = new Lecturer[Math.max(1, lecturers.length)];
+        int amount = 0;
         for (int i = 0; i < lecturers.length; i++) {
             this.lecturers[i] = lecturers[i];
-            if (lecturers[i] != null)
+            if (lecturers[i] != null) {
                 amount++;
+            }
         }
         this.amountOfLecturers = amount;
     }
-    public boolean isLecturerInDepartment(Lecturer l) {
-            if (l==null)
-                return false;
-            for (int i = 0; i < this.amountOfLecturers; i++) {
-                if (lecturers[i] == null) continue;
-                String id1 = lecturers[i].getId();
-                String id2 = l.getId();
-                if (id1 != null && id2 != null && id1.equals(id2)) {
-                    return true;
-                }
-            }
-            return false;
-    }
-    public boolean addLecturerToDepartment(Lecturer l) {
-        if (l==null || isLecturerInDepartment(l) == true) {
+
+    public boolean isLecturerInDepartment(Lecturer lecturer) {
+        if (lecturer == null) {
             return false;
         }
-        if (l.getDepartment() != null) {
-            l.getDepartment().removeLecturerFromDepartment(l);
+        for (int i = 0; i < this.amountOfLecturers; i++) {
+            if (lecturers[i] != null && lecturers[i].equals(lecturer)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void addLecturerToDepartment(Lecturer lecturer) throws CollegeException {
+        if (lecturer == null) {
+            throw new LecturerNotFoundException();
+        }
+        if (isLecturerInDepartment(lecturer)) {
+            throw new LecturerAlreadyInDepartmentException();
+        }
+        if (lecturer.getDepartment() != null) {
+            lecturer.getDepartment().removeLecturerFromDepartment(lecturer);
         }
         Lecturer[] newLecturers;
-        if (this.lecturers.length == this.amountOfLecturers)
-            newLecturers = new Lecturer[Math.max(1, this.amountOfLecturers*2)];
-        else
+        if (this.lecturers.length == this.amountOfLecturers) {
+            newLecturers = new Lecturer[Math.max(1, this.amountOfLecturers * 2)];
+        } else {
             newLecturers = new Lecturer[this.lecturers.length];
+        }
         for (int i = 0; i < this.amountOfLecturers; i++) {
             newLecturers[i] = lecturers[i];
         }
-        l.setDepartment(this);
-        newLecturers[this.amountOfLecturers] = l;
+        lecturer.setDepartment(this);
+        newLecturers[this.amountOfLecturers] = lecturer;
         this.lecturers = newLecturers;
         this.amountOfLecturers++;
-        return true;
     }
-    public boolean removeLecturerFromDepartment(Lecturer l) {
-        if (l==null || l.getDepartment() != this)
-            return false;
+
+    public void removeLecturerFromDepartment(Lecturer lecturer) throws CollegeException {
+        if (lecturer == null || lecturer.getDepartment() != this) {
+            throw new LecturerNotInDepartmentException();
+        }
         Lecturer[] newLecturers = new Lecturer[Math.max(1, this.amountOfLecturers)];
         int j = 0;
         for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (this.lecturers[i] == null) continue;
-            if (!this.lecturers[i].getId().equals(l.getId())) {
+            if (this.lecturers[i] == null) {
+                continue;
+            }
+            if (!this.lecturers[i].equals(lecturer)) {
                 newLecturers[j] = this.lecturers[i];
                 j++;
             }
         }
-        l.setDepartment(null);
+        lecturer.setDepartment(null);
         this.lecturers = newLecturers;
         this.amountOfLecturers = j;
-        return true;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof Department)) {
+            return false;
+        }
+        Department otherDepartment = (Department) other;
+        return name != null && name.equals(otherDepartment.getName());
+    }
+
+    @Override
     public String toString() {
-        String str = "\nDepartment name: " + this.name + "\nLecturers in department:";
+        String str = "\nDepartment name: " + this.name + "\nLecturers in department: ";
         for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturers[i] != null)
+            if (lecturers[i] != null) {
                 str += lecturers[i].getName() + ", ";
+            }
         }
         return str;
     }
