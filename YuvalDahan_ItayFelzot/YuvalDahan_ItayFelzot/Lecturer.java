@@ -1,6 +1,11 @@
 package YuvalDahan_ItayFelzot;
 
-public class Lecturer {
+import java.io.Serializable;
+import java.util.ArrayList;
+
+public class Lecturer implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public enum Degree {First, Second, Doctor, Professor}
     private String name;
     private String id;
@@ -8,8 +13,7 @@ public class Lecturer {
     private String degreeName;
     private float salary;
     private Department department = null;
-    private int amountOfCommittees = 0;
-    private Committee[] committees = new Committee[1];
+    private ArrayList<Committee<? extends Lecturer>> committees = new ArrayList<Committee<? extends Lecturer>>();
 
     public Lecturer(String name, String id, Degree degree, String degreeName, float salary) throws CollegeException {
         setName(name);
@@ -58,83 +62,51 @@ public class Lecturer {
         return department;
     }
 
-    public Committee[] getCommittees() {
+    public ArrayList<Committee<? extends Lecturer>> getCommittees() {
         return committees;
     }
 
     public int getAmountOfCommittees() {
-        return amountOfCommittees;
+        return committees.size();
     }
 
     public boolean belongsToAnyCommittee() {
-        return amountOfCommittees > 0;
+        return committees.size() > 0;
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setCommittees(Committee[] committees) {
+    public void setCommittees(ArrayList<Committee<? extends Lecturer>> committees) {
+        this.committees = new ArrayList<Committee<? extends Lecturer>>();
         if (committees == null) {
             return;
         }
-        this.committees = new Committee[Math.max(1, committees.length)];
-        int amount = 0;
-        for (int i = 0; i < committees.length; i++) {
-            this.committees[i] = committees[i];
-            if (this.committees[i] != null) {
-                amount++;
+        for (int i = 0; i < committees.size(); i++) {
+            if (committees.get(i) != null) {
+                this.committees.add(committees.get(i));
             }
         }
-        this.amountOfCommittees = amount;
     }
 
-    public void addCommitteeToLecturer(Committee committee) throws CollegeException {
+    public void addCommitteeToLecturer(Committee<? extends Lecturer> committee) throws CollegeException {
         if (committee == null) {
             throw new InvalidCommitteeException();
         }
-        for (int i = 0; i < this.amountOfCommittees; i++) {
-            if (this.committees[i] != null && this.committees[i].getName().equals(committee.getName())) {
-                throw new LecturerAlreadyInCommitteeException();
-            }
+        if (committees.contains(committee)) {
+            throw new LecturerAlreadyInCommitteeException();
         }
-        Committee[] newCommittees;
-        if (this.committees.length == this.amountOfCommittees) {
-            newCommittees = new Committee[Math.max(1, this.amountOfCommittees * 2)];
-        } else {
-            newCommittees = new Committee[this.committees.length];
-        }
-        for (int i = 0; i < this.amountOfCommittees; i++) {
-            newCommittees[i] = committees[i];
-        }
-        newCommittees[this.amountOfCommittees] = committee;
-        this.committees = newCommittees;
-        this.amountOfCommittees++;
+        committees.add(committee);
     }
 
-    public void removeCommitteeFromLecturer(Committee committee) throws CollegeException {
+    public void removeCommitteeFromLecturer(Committee<? extends Lecturer> committee) throws CollegeException {
         if (committee == null) {
             throw new InvalidCommitteeException();
         }
-        boolean found = false;
-        Committee[] newCommittees = new Committee[Math.max(1, this.amountOfCommittees)];
-        int j = 0;
-        for (int i = 0; i < this.amountOfCommittees; i++) {
-            if (this.committees[i] == null) {
-                continue;
-            }
-            if (!this.committees[i].getName().equals(committee.getName())) {
-                newCommittees[j] = committees[i];
-                j++;
-            } else {
-                found = true;
-            }
-        }
-        if (!found) {
+        if (committees.remove(committee) == false) {
             throw new LecturerNotInCommitteeException();
         }
-        this.committees = newCommittees;
-        this.amountOfCommittees = j;
     }
 
     public void setId(String id) throws InvalidIdException {
@@ -174,7 +146,7 @@ public class Lecturer {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof Lecturer)) {
+        if ((other instanceof Lecturer) == false) {
             return false;
         }
         Lecturer otherLecturer = (Lecturer) other;
@@ -184,17 +156,14 @@ public class Lecturer {
     @Override
     public String toString() {
         StringBuffer info = new StringBuffer("Name: " + name + "\nId: " + id + "\nDegree: " + degree + "\nDegree Name: " + degreeName + "\nSalary: " + salary);
-        if (this.department != null) {
+        if (department != null) {
             info.append("\nDepartment: ").append(department.getName());
         }
-        if (this.committees != null && this.amountOfCommittees > 0) {
+        if (committees.size() > 0) {
             info.append("\nCommittees he is in: ");
-            for (int i = 0; i < this.amountOfCommittees; i++) {
-                if (this.committees[i] != null) {
-                    if (committees[i].getHeadOfCommittee() != null && committees[i].getHeadOfCommittee().equals(this)) {
-                        info.append("Head of ");
-                    }
-                    info.append(this.committees[i].getName()).append(", ");
+            for (int i = 0; i < committees.size(); i++) {
+                if (committees.get(i) != null) {
+                    info.append(committees.get(i).getName()).append(", ");
                 }
             }
         }

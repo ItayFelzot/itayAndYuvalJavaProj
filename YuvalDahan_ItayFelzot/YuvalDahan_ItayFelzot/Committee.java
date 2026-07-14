@@ -1,18 +1,27 @@
 package YuvalDahan_ItayFelzot;
 
-public class Committee implements Cloneable {
-    private String name;
-    private Lecturer[] lecturers = new Lecturer[1];
-    private int amountOfLecturers = 0;
-    private Lecturer headOfCommittee;
+import java.io.Serializable;
+import java.util.ArrayList;
 
-    public Committee(String name, Lecturer headOfCommittee) throws CollegeException {
+public class Committee<T extends Lecturer> implements Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    public enum MemberType {FirstDegree, SecondDegree, Doctor, Professor}
+
+    private String name;
+    private ArrayList<T> lecturers = new ArrayList<T>();
+    private Lecturer headOfCommittee;
+    private MemberType memberType;
+
+    public Committee(String name, Lecturer headOfCommittee, MemberType memberType) throws CollegeException {
         setName(name);
+        setMemberType(memberType);
         setHeadOfCommittee(headOfCommittee);
     }
 
-    public Committee(Committee committee) {
+    public Committee(Committee<T> committee) {
         setName(committee.getName());
+        setMemberType(committee.getMemberType());
         setLecturers(committee.getLecturers());
         this.headOfCommittee = committee.getHeadOfCommittee();
     }
@@ -21,36 +30,44 @@ public class Committee implements Cloneable {
         return name;
     }
 
-    public Lecturer[] getLecturers() {
+    public ArrayList<T> getLecturers() {
         return lecturers;
     }
 
     public int getAmountOfLecturers() {
-        return amountOfLecturers;
+        return lecturers.size();
     }
 
     public Lecturer getHeadOfCommittee() {
         return headOfCommittee;
     }
 
+    public MemberType getMemberType() {
+        return memberType;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setLecturers(Lecturer[] lecturers) {
+    public void setMemberType(MemberType memberType) {
+        if (memberType == null) {
+            this.memberType = MemberType.FirstDegree;
+        } else {
+            this.memberType = memberType;
+        }
+    }
+
+    public void setLecturers(ArrayList<T> lecturers) {
+        this.lecturers = new ArrayList<T>();
         if (lecturers == null) {
             return;
         }
-        this.lecturers = new Lecturer[Math.max(1, lecturers.length)];
-        int amount = 0;
-        for (int i = 0; i < lecturers.length; i++) {
-            if (lecturers[i] == null) {
-                continue;
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (lecturers.get(i) != null) {
+                this.lecturers.add(lecturers.get(i));
             }
-            this.lecturers[i] = lecturers[i];
-            amount++;
         }
-        this.amountOfLecturers = amount;
     }
 
     public void setHeadOfCommittee(Lecturer headOfCommittee) throws CollegeException {
@@ -60,7 +77,7 @@ public class Committee implements Cloneable {
         if (headOfCommittee.getDegree().compareTo(Lecturer.Degree.Doctor) < 0) {
             throw new InvalidCommitteeHeadException();
         }
-        if (headOfCommittee.belongsToAnyCommittee() && !isHeadOfCommittee(headOfCommittee)) {
+        if (headOfCommittee.belongsToAnyCommittee() && isHeadOfCommittee(headOfCommittee) == false) {
             throw new CommitteeHeadAlreadyAssignedException();
         }
         if (this.headOfCommittee != null) {
@@ -74,21 +91,17 @@ public class Committee implements Cloneable {
         if (lecturer == null) {
             return false;
         }
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturers[i] != null && lecturers[i].equals(lecturer)) {
-                return true;
-            }
-        }
-        return false;
+        return lecturers.contains(lecturer);
     }
 
     public boolean isHeadOfCommittee(Lecturer lecturer) {
-        if (lecturer == null || this.headOfCommittee == null) {
+        if (lecturer == null || headOfCommittee == null) {
             return false;
         }
-        return this.headOfCommittee.equals(lecturer);
+        return headOfCommittee.equals(lecturer);
     }
 
+    @SuppressWarnings("unchecked")
     public void addLecturerToCommittee(Lecturer lecturer) throws CollegeException {
         if (lecturer == null) {
             throw new LecturerNotFoundException();
@@ -99,36 +112,19 @@ public class Committee implements Cloneable {
         if (lecturer.belongsToAnyCommittee()) {
             throw new LecturerAlreadyInAnotherCommitteeException();
         }
-        Lecturer[] newLecturers;
-        if (amountOfLecturers == lecturers.length) {
-            newLecturers = new Lecturer[Math.max(1, lecturers.length * 2)];
-        } else {
-            newLecturers = new Lecturer[lecturers.length];
+        if (matchesMemberType(lecturer) == false) {
+            throw new CommitteeDegreeMismatchException();
         }
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            newLecturers[i] = lecturers[i];
-        }
-        newLecturers[this.amountOfLecturers] = lecturer;
-        this.lecturers = newLecturers;
-        this.amountOfLecturers++;
+        lecturers.add((T) lecturer);
         lecturer.addCommitteeToLecturer(this);
     }
 
     public void removeLecturerFromCommittee(Lecturer lecturer) throws CollegeException {
-        if (lecturer == null || !isLecturerInCommittee(lecturer)) {
+        if (lecturer == null || isLecturerInCommittee(lecturer) == false) {
             throw new LecturerNotInCommitteeException();
         }
-        Lecturer[] newLecturers = new Lecturer[Math.max(1, this.amountOfLecturers)];
-        int j = 0;
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturers[i] != null && !lecturers[i].equals(lecturer)) {
-                newLecturers[j] = lecturers[i];
-                j++;
-            }
-        }
+        lecturers.remove(lecturer);
         lecturer.removeCommitteeFromLecturer(this);
-        this.lecturers = newLecturers;
-        this.amountOfLecturers = j;
     }
 
     public void changeHeadOfCommittee(Lecturer lecturer) throws CollegeException {
@@ -138,7 +134,7 @@ public class Committee implements Cloneable {
         if (lecturer.getDegree().compareTo(Lecturer.Degree.Doctor) < 0) {
             throw new InvalidCommitteeHeadException();
         }
-        if (lecturer.belongsToAnyCommittee() && !isLecturerInCommittee(lecturer) && !isHeadOfCommittee(lecturer)) {
+        if (lecturer.belongsToAnyCommittee() && isLecturerInCommittee(lecturer) == false && isHeadOfCommittee(lecturer) == false) {
             throw new CommitteeHeadAlreadyAssignedException();
         }
         if (isLecturerInCommittee(lecturer)) {
@@ -147,19 +143,35 @@ public class Committee implements Cloneable {
         setHeadOfCommittee(lecturer);
     }
 
+    private boolean matchesMemberType(Lecturer lecturer) {
+        if (memberType == MemberType.FirstDegree) {
+            return lecturer instanceof FirstDegree;
+        }
+        if (memberType == MemberType.SecondDegree) {
+            return lecturer instanceof SecondDegree;
+        }
+        if (memberType == MemberType.Doctor) {
+            return lecturer instanceof Doctor;
+        }
+        if (memberType == MemberType.Professor) {
+            return lecturer instanceof Professor;
+        }
+        return false;
+    }
+
     @Override
-    public Committee clone() {
-        Committee cloned = new Committee(this);
-        cloned.setName("new-" + this.name);
+    public Committee<T> clone() {
+        Committee<T> cloned = new Committee<T>(this);
+        cloned.setName("new-" + name);
         return cloned;
     }
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof Committee)) {
+        if ((other instanceof Committee) == false) {
             return false;
         }
-        Committee otherCommittee = (Committee) other;
+        Committee<?> otherCommittee = (Committee<?>) other;
         return name != null && name.equals(otherCommittee.getName());
     }
 
@@ -171,13 +183,12 @@ public class Committee implements Cloneable {
         } else {
             headName = headOfCommittee.getName();
         }
-        String info = "Committee name: " + this.name + "\nHead of committee: " + headName + "\nLecturers in committee: ";
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturers[i] != null) {
-                info += lecturers[i].getName() + ", ";
-            }
+        String info = "Committee name: " + name + "\nHead of committee: " + headName + "\nMember type: " + memberType + "\nLecturers in committee: ";
+        for (int i = 0; i < lecturers.size(); i++) {
+            info += lecturers.get(i).getName() + ", ";
         }
         return info;
     }
 }
+
 

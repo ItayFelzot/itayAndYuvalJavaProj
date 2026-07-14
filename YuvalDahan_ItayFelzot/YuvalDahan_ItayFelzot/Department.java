@@ -1,9 +1,13 @@
 package YuvalDahan_ItayFelzot;
 
-public class Department {
+import java.io.Serializable;
+import java.util.ArrayList;
+
+public class Department implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String name;
-    private int amountOfLecturers = 0;
-    private Lecturer[] lecturers = new Lecturer[1];
+    private ArrayList<Lecturer> lecturers = new ArrayList<Lecturer>();
 
     public Department(String name) {
         setName(name);
@@ -19,10 +23,10 @@ public class Department {
     }
 
     public int getAmountOfLecturers() {
-        return amountOfLecturers;
+        return lecturers.size();
     }
 
-    public Lecturer[] getLecturers() {
+    public ArrayList<Lecturer> getLecturers() {
         return lecturers;
     }
 
@@ -30,31 +34,23 @@ public class Department {
         this.name = name;
     }
 
-    public void setLecturers(Lecturer[] lecturers) {
+    public void setLecturers(ArrayList<Lecturer> lecturers) {
+        this.lecturers = new ArrayList<Lecturer>();
         if (lecturers == null) {
             return;
         }
-        this.lecturers = new Lecturer[Math.max(1, lecturers.length)];
-        int amount = 0;
-        for (int i = 0; i < lecturers.length; i++) {
-            this.lecturers[i] = lecturers[i];
-            if (lecturers[i] != null) {
-                amount++;
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (lecturers.get(i) != null) {
+                this.lecturers.add(lecturers.get(i));
             }
         }
-        this.amountOfLecturers = amount;
     }
 
     public boolean isLecturerInDepartment(Lecturer lecturer) {
         if (lecturer == null) {
             return false;
         }
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturers[i] != null && lecturers[i].equals(lecturer)) {
-                return true;
-            }
-        }
-        return false;
+        return lecturers.contains(lecturer);
     }
 
     public void addLecturerToDepartment(Lecturer lecturer) throws CollegeException {
@@ -67,44 +63,23 @@ public class Department {
         if (lecturer.getDepartment() != null) {
             lecturer.getDepartment().removeLecturerFromDepartment(lecturer);
         }
-        Lecturer[] newLecturers;
-        if (this.lecturers.length == this.amountOfLecturers) {
-            newLecturers = new Lecturer[Math.max(1, this.amountOfLecturers * 2)];
-        } else {
-            newLecturers = new Lecturer[this.lecturers.length];
-        }
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            newLecturers[i] = lecturers[i];
-        }
         lecturer.setDepartment(this);
-        newLecturers[this.amountOfLecturers] = lecturer;
-        this.lecturers = newLecturers;
-        this.amountOfLecturers++;
+        lecturers.add(lecturer);
     }
 
     public void removeLecturerFromDepartment(Lecturer lecturer) throws CollegeException {
         if (lecturer == null || lecturer.getDepartment() != this) {
             throw new LecturerNotInDepartmentException();
         }
-        Lecturer[] newLecturers = new Lecturer[Math.max(1, this.amountOfLecturers)];
-        int j = 0;
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (this.lecturers[i] == null) {
-                continue;
-            }
-            if (!this.lecturers[i].equals(lecturer)) {
-                newLecturers[j] = this.lecturers[i];
-                j++;
-            }
+        if (lecturers.remove(lecturer) == false) {
+            throw new LecturerNotInDepartmentException();
         }
         lecturer.setDepartment(null);
-        this.lecturers = newLecturers;
-        this.amountOfLecturers = j;
     }
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof Department)) {
+        if ((other instanceof Department) == false) {
             return false;
         }
         Department otherDepartment = (Department) other;
@@ -113,11 +88,9 @@ public class Department {
 
     @Override
     public String toString() {
-        String str = "\nDepartment name: " + this.name + "\nLecturers in department: ";
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturers[i] != null) {
-                str += lecturers[i].getName() + ", ";
-            }
+        String str = "\nDepartment name: " + name + "\nLecturers in department: ";
+        for (int i = 0; i < lecturers.size(); i++) {
+            str += lecturers.get(i).getName() + ", ";
         }
         return str;
     }

@@ -9,13 +9,14 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class Program {
+    private static final String DATA_FILE = "college.dat";
+
     public static void main(String[] args) {
         System.out.println("Submitters:\n1. Itay Felzot - ID: 331017764\n2. Yuval Dahan - ID: 331694596");
         Scanner s = new Scanner(System.in);
 
-        System.out.println("Enter the name of the college: ");
-        String collegeName = s.nextLine();
-        College c = new College(collegeName);
+        College c = loadCollege(s);
+        String collegeName = c.getName();
 
         int input;
         do {
@@ -80,7 +81,29 @@ public class Program {
             System.out.println("");
         } while (input != 0);
 
+        try {
+            c.saveToFile(DATA_FILE);
+            System.out.println("College data saved successfully.");
+        } catch (CollegeException e) {
+            System.out.println(e.getMessage());
+        }
+
         s.close();
+    }
+
+    private static College loadCollege(Scanner s) {
+        try {
+            College loadedCollege = College.loadFromFile(DATA_FILE);
+            if (loadedCollege != null) {
+                System.out.println("College data loaded successfully.");
+                return loadedCollege;
+            }
+        } catch (CollegeException e) {
+            System.out.println(e.getMessage());
+        }
+        System.out.println("Enter the name of the college: ");
+        String collegeName = s.nextLine();
+        return new College(collegeName);
     }
 
     private static void printMenu(String collegeName) {
@@ -165,7 +188,10 @@ public class Program {
             String committeeName = s.nextLine();
             System.out.println("Enter the name of the head of the committee: ");
             String headName = s.nextLine();
-            c.inputCommittee(committeeName, headName);
+            System.out.println("Enter committee member type (1 for First degree, 2 for Second degree, 3 for Doctor, 4 for Professor): ");
+            int memberType = readInt(s);
+            s.nextLine();
+            c.inputCommittee(committeeName, headName, memberType);
             System.out.println("Committee added successfully.");
         } catch (CollegeException e) {
             System.out.println(e.getMessage());
@@ -223,33 +249,43 @@ public class Program {
             } catch (CollegeException e) {
                 System.out.println(e.getMessage());
             }
-    }
+        }
     }
 
     private static void addLecturerToDepartment(Scanner s, College c) {
         System.out.println("Enter the name of the lecturer: ");
         String lecturerName = s.nextLine();
-        try {
-            System.out.println("Enter the name of the department: ");
-            String departmentName = s.nextLine();
-            c.addLecturerToDepartment(lecturerName, departmentName);
-            System.out.println("Lecturer added to department successfully.");
-        } catch (DepartmentNotFoundException e) {
-            System.out.println(e.getMessage());
-        } catch (CollegeException e) {
-            System.out.println(e.getMessage());
+        boolean finished = false;
+        while (finished == false) {
+            try {
+                System.out.println("Enter the name of the department: ");
+                String departmentName = s.nextLine();
+                c.addLecturerToDepartment(lecturerName, departmentName);
+                System.out.println("Lecturer added to department successfully.");
+                finished = true;
+            } catch (DepartmentNotFoundException e) {
+                System.out.println(e.getMessage());
+            } catch (CollegeException e) {
+                System.out.println(e.getMessage());
+                finished = true;
+            }
         }
     }
 
     private static void showDepartmentAverage(Scanner s, College c) {
-        try {
-            System.out.println("Enter the name of the department: ");
-            String departmentName = s.nextLine();
-            System.out.println("Average salary of lecturers in the department: " + c.showAverageSalaryOfLecturersInDepartment(departmentName));
-        } catch (DepartmentNotFoundException e) {
-            System.out.println(e.getMessage());
-        } catch (CollegeException e) {
-            System.out.println(e.getMessage());
+        boolean finished = false;
+        while (finished == false) {
+            try {
+                System.out.println("Enter the name of the department: ");
+                String departmentName = s.nextLine();
+                System.out.println("Average salary of lecturers in the department: " + c.showAverageSalaryOfLecturersInDepartment(departmentName));
+                finished = true;
+            } catch (DepartmentNotFoundException e) {
+                System.out.println(e.getMessage());
+            } catch (CollegeException e) {
+                System.out.println(e.getMessage());
+                finished = true;
+            }
         }
     }
 
@@ -327,3 +363,6 @@ public class Program {
         }
     }
 }
+
+
+

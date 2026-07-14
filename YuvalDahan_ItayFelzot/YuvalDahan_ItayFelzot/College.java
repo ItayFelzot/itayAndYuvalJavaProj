@@ -1,18 +1,55 @@
 package YuvalDahan_ItayFelzot;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Comparator;
 
-public class College {
+public class College implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private String name;
-    private Department[] departmentsArr = new Department[1];
-    private int amountOfDepartments = 0;
-    private Committee[] committeesArr = new Committee[1];
-    private int amountOfCommittees = 0;
-    private Lecturer[] lecturersArr = new Lecturer[1];
-    private int amountOfLecturers = 0;
+    private ArrayList<Department> departmentsArr = new ArrayList<Department>();
+    private ArrayList<Committee> committeesArr = new ArrayList<Committee>();
+    private ArrayList<Lecturer> lecturersArr = new ArrayList<Lecturer>();
 
     public College(String name) {
         setName(name);
+    }
+
+    public static College loadFromFile(String fileName) throws CollegeException {
+        File file = new File(fileName);
+        if (file.exists() == false) {
+            return null;
+        }
+        try {
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream(file));
+            Object data = in.readObject();
+            in.close();
+            if ((data instanceof College) == false) {
+                throw new CorruptedCollegeFileException();
+            }
+            return (College) data;
+        } catch (ClassNotFoundException e) {
+            throw new CorruptedCollegeFileException();
+        } catch (IOException e) {
+            throw new CollegeFileException();
+        }
+    }
+
+    public void saveToFile(String fileName) throws CollegeException {
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(fileName));
+            out.writeObject(this);
+            out.close();
+        } catch (IOException e) {
+            throw new CollegeFileException();
+        }
     }
 
     public void inputLecturer(String name, String id, int degreeInput, String degreeName, float salary, String university) throws CollegeException {
@@ -36,7 +73,7 @@ public class College {
         addLecturer(lecturer);
     }
 
-    public void inputCommittee(String committeeName, String headOfCommitteeName) throws CollegeException {
+    public void inputCommittee(String committeeName, String headOfCommitteeName, int memberTypeInput) throws CollegeException {
         if (findCommitteeByName(committeeName) != null) {
             throw new DuplicateCommitteeException();
         }
@@ -47,7 +84,24 @@ public class College {
         if (headOfCommittee.belongsToAnyCommittee()) {
             throw new CommitteeHeadAlreadyAssignedException();
         }
-        addCommittee(new Committee(committeeName, headOfCommittee));
+        Committee.MemberType memberType = createMemberType(memberTypeInput);
+        addCommittee(new Committee<Lecturer>(committeeName, headOfCommittee, memberType));
+    }
+
+    private Committee.MemberType createMemberType(int memberTypeInput) throws InvalidDegreeException {
+        if (memberTypeInput == 1) {
+            return Committee.MemberType.FirstDegree;
+        }
+        if (memberTypeInput == 2) {
+            return Committee.MemberType.SecondDegree;
+        }
+        if (memberTypeInput == 3) {
+            return Committee.MemberType.Doctor;
+        }
+        if (memberTypeInput == 4) {
+            return Committee.MemberType.Professor;
+        }
+        throw new InvalidDegreeException();
     }
 
     public void addLecturerToCommittee(String lecturerName, String committeeName) throws CollegeException {
@@ -129,7 +183,7 @@ public class College {
         if (isCommitteeInCollege(cloned)) {
             throw new DuplicateCommitteeException();
         }
-        appendCommittee(cloned);
+        committeesArr.add(cloned);
     }
 
     public float showAverageSalaryOfLecturersInCollege() {
@@ -149,6 +203,10 @@ public class College {
         return committeesInfo();
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void setName(String name) {
         this.name = name;
     }
@@ -157,12 +215,7 @@ public class College {
         if (department == null) {
             return false;
         }
-        for (int i = 0; i < this.amountOfDepartments; i++) {
-            if (departmentsArr[i] != null && departmentsArr[i].equals(department)) {
-                return true;
-            }
-        }
-        return false;
+        return departmentsArr.contains(department);
     }
 
     public void addDepartment(Department department) throws CollegeException {
@@ -172,30 +225,14 @@ public class College {
         if (isDepartmentInCollege(department)) {
             throw new DuplicateDepartmentException();
         }
-        Department[] newDepartmentsArr;
-        if (this.departmentsArr.length == this.amountOfDepartments) {
-            newDepartmentsArr = new Department[Math.max(1, this.amountOfDepartments * 2)];
-        } else {
-            newDepartmentsArr = new Department[this.departmentsArr.length];
-        }
-        for (int i = 0; i < this.amountOfDepartments; i++) {
-            newDepartmentsArr[i] = departmentsArr[i];
-        }
-        newDepartmentsArr[this.amountOfDepartments] = department;
-        this.departmentsArr = newDepartmentsArr;
-        this.amountOfDepartments++;
+        departmentsArr.add(department);
     }
 
     public boolean isCommitteeInCollege(Committee committee) {
         if (committee == null) {
             return false;
         }
-        for (int i = 0; i < this.amountOfCommittees; i++) {
-            if (committeesArr[i] != null && committeesArr[i].equals(committee)) {
-                return true;
-            }
-        }
-        return false;
+        return committeesArr.contains(committee);
     }
 
     public void addCommittee(Committee committee) throws CollegeException {
@@ -205,34 +242,14 @@ public class College {
         if (isCommitteeInCollege(committee)) {
             throw new DuplicateCommitteeException();
         }
-        appendCommittee(committee);
-    }
-
-    private void appendCommittee(Committee committee) {
-        Committee[] newCommitteesArr;
-        if (this.committeesArr.length == this.amountOfCommittees) {
-            newCommitteesArr = new Committee[Math.max(1, this.amountOfCommittees * 2)];
-        } else {
-            newCommitteesArr = new Committee[this.committeesArr.length];
-        }
-        for (int i = 0; i < this.amountOfCommittees; i++) {
-            newCommitteesArr[i] = committeesArr[i];
-        }
-        newCommitteesArr[this.amountOfCommittees] = committee;
-        this.committeesArr = newCommitteesArr;
-        this.amountOfCommittees++;
+        committeesArr.add(committee);
     }
 
     public boolean isLecturerInCollege(Lecturer lecturer) {
         if (lecturer == null) {
             return false;
         }
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            if (lecturersArr[i] != null && lecturersArr[i].getId().equals(lecturer.getId())) {
-                return true;
-            }
-        }
-        return false;
+        return lecturersArr.contains(lecturer);
     }
 
     public void addLecturer(Lecturer lecturer) throws CollegeException {
@@ -242,86 +259,72 @@ public class College {
         if (isLecturerInCollege(lecturer)) {
             throw new DuplicateLecturerException();
         }
-        Lecturer[] newLecturersArr;
-        if (this.lecturersArr.length == this.amountOfLecturers) {
-            newLecturersArr = new Lecturer[Math.max(1, this.amountOfLecturers * 2)];
-        } else {
-            newLecturersArr = new Lecturer[this.lecturersArr.length];
-        }
-        for (int i = 0; i < this.amountOfLecturers; i++) {
-            newLecturersArr[i] = lecturersArr[i];
-        }
-        newLecturersArr[this.amountOfLecturers] = lecturer;
-        this.lecturersArr = newLecturersArr;
-        this.amountOfLecturers++;
+        lecturersArr.add(lecturer);
     }
 
     public float averageSalaryOfDepartment(Department department) throws CollegeException {
         if (department == null || isDepartmentInCollege(department) == false) {
             throw new DepartmentNotFoundException();
         }
-        Lecturer[] lecturers = department.getLecturers();
-        int amount = department.getAmountOfLecturers();
+        ArrayList<Lecturer> lecturers = department.getLecturers();
         float sum = 0;
-        for (int i = 0; i < amount; i++) {
-            if (lecturers[i] != null) {
-                sum += lecturers[i].getSalary();
-            }
+        for (int i = 0; i < lecturers.size(); i++) {
+            sum += lecturers.get(i).getSalary();
         }
-        if (amount == 0) {
+        if (lecturers.size() == 0) {
             return 0;
         }
-        return sum / amount;
+        return sum / lecturers.size();
     }
 
     public float averageSalaryOfCollege() {
         float sum = 0;
-        for (int i = 0; i < amountOfLecturers; i++) {
-            sum += lecturersArr[i].getSalary();
+        for (int i = 0; i < lecturersArr.size(); i++) {
+            sum += lecturersArr.get(i).getSalary();
         }
-        if (amountOfLecturers == 0) {
+        if (lecturersArr.size() == 0) {
             return 0;
         }
-        return sum / amountOfLecturers;
+        return sum / lecturersArr.size();
     }
 
     public String lecturersInfo() {
         StringBuffer info = new StringBuffer("\n");
-        for (int i = 0; i < amountOfLecturers; i++) {
-            info.append("\n").append(lecturersArr[i]).append("\n");
+        for (int i = 0; i < lecturersArr.size(); i++) {
+            info.append("\n").append(lecturersArr.get(i)).append("\n");
         }
         return info.toString();
     }
 
     public String committeesInfo() {
         StringBuffer info = new StringBuffer("\n");
-        for (int i = 0; i < amountOfCommittees; i++) {
-            info.append("\n").append(committeesArr[i]).append("\n");
+        for (int i = 0; i < committeesArr.size(); i++) {
+            info.append("\n").append(committeesArr.get(i)).append("\n");
         }
         return info.toString();
     }
 
     public String departmentsInfo() {
         StringBuffer info = new StringBuffer("\n");
-        for (int i = 0; i < amountOfDepartments; i++) {
-            info.append("\n").append(departmentsArr[i]).append("\n");
+        for (int i = 0; i < departmentsArr.size(); i++) {
+            info.append("\n").append(departmentsArr.get(i)).append("\n");
         }
         return info.toString();
     }
 
     private Lecturer findLecturerByName(String lecturerName) throws LecturerNotFoundException {
-        for (int i = 0; i < amountOfLecturers; i++) {
-            if (lecturersArr[i] != null && lecturersArr[i].getName().equals(lecturerName)) {
-                return lecturersArr[i];
+        for (int i = 0; i < lecturersArr.size(); i++) {
+            if (lecturersArr.get(i).getName().equals(lecturerName)) {
+                return lecturersArr.get(i);
             }
         }
         throw new LecturerNotFoundException();
     }
 
     private Department findRequiredDepartmentByName(String departmentName) throws DepartmentNotFoundException {
-        for (int i = 0; i < amountOfDepartments; i++) {
-            if (departmentsArr[i] != null && departmentsArr[i].getName().equals(departmentName)) {
-                return departmentsArr[i];
+        for (int i = 0; i < departmentsArr.size(); i++) {
+            if (departmentsArr.get(i).getName().equals(departmentName)) {
+                return departmentsArr.get(i);
             }
         }
         throw new DepartmentNotFoundException();
@@ -336,9 +339,9 @@ public class College {
     }
 
     private Committee findCommitteeByName(String committeeName) {
-        for (int i = 0; i < amountOfCommittees; i++) {
-            if (committeesArr[i] != null && committeesArr[i].getName().equals(committeeName)) {
-                return committeesArr[i];
+        for (int i = 0; i < committeesArr.size(); i++) {
+            if (committeesArr.get(i).getName().equals(committeeName)) {
+                return committeesArr.get(i);
             }
         }
         return null;
@@ -357,22 +360,26 @@ public class College {
         if (committee.getHeadOfCommittee() instanceof ArticleWriter) {
             amount += ((ArticleWriter) committee.getHeadOfCommittee()).getAmountOfArticles();
         }
-        Lecturer[] lecturers = committee.getLecturers();
-        for (int i = 0; i < committee.getAmountOfLecturers(); i++) {
-            if (lecturers[i] instanceof ArticleWriter) {
-                amount += ((ArticleWriter) lecturers[i]).getAmountOfArticles();
+        ArrayList lecturers = committee.getLecturers();
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (lecturers.get(i) instanceof ArticleWriter) {
+                amount += ((ArticleWriter) lecturers.get(i)).getAmountOfArticles();
             }
         }
         return amount;
     }
 
-    private class CommitteeMembersComparator implements Comparator<Committee> {
+    private class CommitteeMembersComparator implements Comparator<Committee>, Serializable {
+        private static final long serialVersionUID = 1L;
+
         public int compare(Committee first, Committee second) {
             return Integer.compare(first.getAmountOfLecturers(), second.getAmountOfLecturers());
         }
     }
 
-    private class CommitteeArticlesComparator implements Comparator<Committee> {
+    private class CommitteeArticlesComparator implements Comparator<Committee>, Serializable {
+        private static final long serialVersionUID = 1L;
+
         public int compare(Committee first, Committee second) {
             return Integer.compare(countCommitteeArticles(first), countCommitteeArticles(second));
         }
@@ -389,6 +396,6 @@ public class College {
 
     @Override
     public String toString() {
-        return "College name: " + this.name + "\nDepartments in college:\n" + departmentsInfo() + "\nCommittees in college:\n" + committeesInfo() + "\nLecturers in college:\n" + lecturersInfo();
+        return "College name: " + name + "\nDepartments in college:\n" + departmentsInfo() + "\nCommittees in college:\n" + committeesInfo() + "\nLecturers in college:\n" + lecturersInfo();
     }
 }
