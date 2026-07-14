@@ -50,7 +50,12 @@ public class Department implements Serializable {
         if (lecturer == null) {
             return false;
         }
-        return lecturers.contains(lecturer);
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (isSameLecturerById(lecturers.get(i), lecturer)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void addLecturerToDepartment(Lecturer lecturer) throws CollegeException {
@@ -71,10 +76,30 @@ public class Department implements Serializable {
         if (lecturer == null || lecturer.getDepartment() != this) {
             throw new LecturerNotInDepartmentException();
         }
-        if (lecturers.remove(lecturer) == false) {
+        if (removeLecturerById(lecturer) == false) {
             throw new LecturerNotInDepartmentException();
         }
         lecturer.setDepartment(null);
+    }
+
+    private boolean removeLecturerById(Lecturer lecturer) {
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (isSameLecturerById(lecturers.get(i), lecturer)) {
+                lecturers.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSameLecturerById(Lecturer first, Lecturer second) {
+        if (first == null || second == null) {
+            return false;
+        }
+        if (first.getId() == null || second.getId() == null) {
+            return false;
+        }
+        return first.getId().equals(second.getId());
     }
 
     @Override

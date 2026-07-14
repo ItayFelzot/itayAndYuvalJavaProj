@@ -91,14 +91,19 @@ public class Committee<T extends Lecturer> implements Cloneable, Serializable {
         if (lecturer == null) {
             return false;
         }
-        return lecturers.contains(lecturer);
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (isSameLecturerById(lecturers.get(i), lecturer)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean isHeadOfCommittee(Lecturer lecturer) {
         if (lecturer == null || headOfCommittee == null) {
             return false;
         }
-        return headOfCommittee.equals(lecturer);
+        return isSameLecturerById(headOfCommittee, lecturer);
     }
 
     @SuppressWarnings("unchecked")
@@ -123,8 +128,28 @@ public class Committee<T extends Lecturer> implements Cloneable, Serializable {
         if (lecturer == null || isLecturerInCommittee(lecturer) == false) {
             throw new LecturerNotInCommitteeException();
         }
-        lecturers.remove(lecturer);
+        removeLecturerById(lecturer);
         lecturer.removeCommitteeFromLecturer(this);
+    }
+
+    private boolean removeLecturerById(Lecturer lecturer) {
+        for (int i = 0; i < lecturers.size(); i++) {
+            if (isSameLecturerById(lecturers.get(i), lecturer)) {
+                lecturers.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSameLecturerById(Lecturer first, Lecturer second) {
+        if (first == null || second == null) {
+            return false;
+        }
+        if (first.getId() == null || second.getId() == null) {
+            return false;
+        }
+        return first.getId().equals(second.getId());
     }
 
     public void changeHeadOfCommittee(Lecturer lecturer) throws CollegeException {

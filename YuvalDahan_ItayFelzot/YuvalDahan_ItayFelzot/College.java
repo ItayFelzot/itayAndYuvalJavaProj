@@ -277,7 +277,32 @@ public class College implements Serializable {
         if (lecturer == null) {
             return false;
         }
-        return lecturersArr.contains(lecturer);
+        for (int i = 0; i < lecturersArr.size(); i++) {
+            if (isSameLecturerById(lecturersArr.get(i), lecturer)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSameLecturerById(Lecturer first, Lecturer second) {
+        if (first == null || second == null) {
+            return false;
+        }
+        if (first.getId() == null || second.getId() == null) {
+            return false;
+        }
+        return first.getId().equals(second.getId());
+    }
+
+    public boolean hasMoreThanOneLecturerWithName(String lecturerName) {
+        int amountWithName = 0;
+        for (int i = 0; i < lecturersArr.size(); i++) {
+            if (lecturersArr.get(i).getName().equals(lecturerName)) {
+                amountWithName++;
+            }
+        }
+        return amountWithName > 1;
     }
 
     public void addLecturer(Lecturer lecturer) throws CollegeException {
