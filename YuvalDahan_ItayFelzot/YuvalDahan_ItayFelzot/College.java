@@ -74,10 +74,14 @@ public class College implements Serializable {
     }
 
     public void inputCommittee(String committeeName, String headOfCommitteeName, int memberTypeInput) throws CollegeException {
+        inputCommittee(committeeName, headOfCommitteeName, "", memberTypeInput);
+    }
+
+    public void inputCommittee(String committeeName, String headOfCommitteeName, String headOfCommitteeId, int memberTypeInput) throws CollegeException {
         if (findCommitteeByName(committeeName) != null) {
             throw new DuplicateCommitteeException();
         }
-        Lecturer headOfCommittee = findLecturerByName(headOfCommitteeName);
+        Lecturer headOfCommittee = findLecturerByNameAndId(headOfCommitteeName, headOfCommitteeId);
         if (headOfCommittee.getDegree().ordinal() < Lecturer.Degree.Doctor.ordinal()) {
             throw new InvalidCommitteeHeadException();
         }
@@ -105,20 +109,32 @@ public class College implements Serializable {
     }
 
     public void addLecturerToCommittee(String lecturerName, String committeeName) throws CollegeException {
+        addLecturerToCommittee(lecturerName, "", committeeName);
+    }
+
+    public void addLecturerToCommittee(String lecturerName, String lecturerId, String committeeName) throws CollegeException {
         Committee committee = findRequiredCommitteeByName(committeeName);
-        Lecturer lecturer = findLecturerByName(lecturerName);
+        Lecturer lecturer = findLecturerByNameAndId(lecturerName, lecturerId);
         committee.addLecturerToCommittee(lecturer);
     }
 
     public void changeHeadOfCommittee(String committeeName, String lecturerName) throws CollegeException {
+        changeHeadOfCommittee(committeeName, lecturerName, "");
+    }
+
+    public void changeHeadOfCommittee(String committeeName, String lecturerName, String lecturerId) throws CollegeException {
         Committee committee = findRequiredCommitteeByName(committeeName);
-        Lecturer lecturer = findLecturerByName(lecturerName);
+        Lecturer lecturer = findLecturerByNameAndId(lecturerName, lecturerId);
         committee.changeHeadOfCommittee(lecturer);
     }
 
     public void removeLecturerFromCommittee(String committeeName, String lecturerName) throws CollegeException {
+        removeLecturerFromCommittee(committeeName, lecturerName, "");
+    }
+
+    public void removeLecturerFromCommittee(String committeeName, String lecturerName, String lecturerId) throws CollegeException {
         Committee committee = findRequiredCommitteeByName(committeeName);
-        Lecturer lecturer = findLecturerByName(lecturerName);
+        Lecturer lecturer = findLecturerByNameAndId(lecturerName, lecturerId);
         committee.removeLecturerFromCommittee(lecturer);
     }
 
@@ -127,19 +143,31 @@ public class College implements Serializable {
     }
 
     public void addLecturerToDepartment(String lecturerName, String departmentName) throws CollegeException {
+        addLecturerToDepartment(lecturerName, "", departmentName);
+    }
+
+    public void addLecturerToDepartment(String lecturerName, String lecturerId, String departmentName) throws CollegeException {
         Department department = findRequiredDepartmentByName(departmentName);
-        Lecturer lecturer = findLecturerByName(lecturerName);
+        Lecturer lecturer = findLecturerByNameAndId(lecturerName, lecturerId);
         department.addLecturerToDepartment(lecturer);
     }
 
     public void addArticleToLecturer(String lecturerName, String articleName) throws CollegeException {
-        ArticleWriter articleWriter = getArticleWriter(lecturerName);
+        addArticleToLecturer(lecturerName, "", articleName);
+    }
+
+    public void addArticleToLecturer(String lecturerName, String lecturerId, String articleName) throws CollegeException {
+        ArticleWriter articleWriter = getArticleWriter(lecturerName, lecturerId);
         articleWriter.addArticle(articleName);
     }
 
     public String compareArticleWriters(String firstLecturerName, String secondLecturerName) throws CollegeException {
-        ArticleWriter first = getArticleWriter(firstLecturerName);
-        ArticleWriter second = getArticleWriter(secondLecturerName);
+        return compareArticleWriters(firstLecturerName, "", secondLecturerName, "");
+    }
+
+    public String compareArticleWriters(String firstLecturerName, String firstLecturerId, String secondLecturerName, String secondLecturerId) throws CollegeException {
+        ArticleWriter first = getArticleWriter(firstLecturerName, firstLecturerId);
+        ArticleWriter second = getArticleWriter(secondLecturerName, secondLecturerId);
         int result = first.compareArticles(second);
         if (first.equals(second)) {
             return "Both lecturers have the same amount of articles: " + first.getAmountOfArticles();
@@ -312,9 +340,30 @@ public class College implements Serializable {
         return info.toString();
     }
 
-    private Lecturer findLecturerByName(String lecturerName) throws LecturerNotFoundException {
+    private Lecturer findLecturerByName(String lecturerName) throws CollegeException {
+        Lecturer foundLecturer = null;
+        int amountWithName = 0;
         for (int i = 0; i < lecturersArr.size(); i++) {
             if (lecturersArr.get(i).getName().equals(lecturerName)) {
+                foundLecturer = lecturersArr.get(i);
+                amountWithName++;
+            }
+        }
+        if (amountWithName > 1) {
+            throw new MultipleLecturersWithSameNameException(lecturerName);
+        }
+        if (foundLecturer != null) {
+            return foundLecturer;
+        }
+        throw new LecturerNotFoundException();
+    }
+
+    private Lecturer findLecturerByNameAndId(String lecturerName, String lecturerId) throws CollegeException {
+        if (lecturerId == null || lecturerId.equals("")) {
+            return findLecturerByName(lecturerName);
+        }
+        for (int i = 0; i < lecturersArr.size(); i++) {
+            if (lecturersArr.get(i).getName().equals(lecturerName) && lecturersArr.get(i).getId().equals(lecturerId)) {
                 return lecturersArr.get(i);
             }
         }
@@ -348,7 +397,11 @@ public class College implements Serializable {
     }
 
     private ArticleWriter getArticleWriter(String lecturerName) throws CollegeException {
-        Lecturer lecturer = findLecturerByName(lecturerName);
+        return getArticleWriter(lecturerName, "");
+    }
+
+    private ArticleWriter getArticleWriter(String lecturerName, String lecturerId) throws CollegeException {
+        Lecturer lecturer = findLecturerByNameAndId(lecturerName, lecturerId);
         if ((lecturer instanceof ArticleWriter) == false) {
             throw new InvalidArticleWriterException();
         }

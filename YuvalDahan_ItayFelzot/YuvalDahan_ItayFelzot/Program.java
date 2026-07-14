@@ -183,55 +183,97 @@ public class Program {
     }
 
     private static void addCommittee(Scanner s, College c) {
+        String committeeName = "";
+        String headName = "";
+        int memberType = 0;
         try {
             System.out.println("Enter the name of the committee: ");
-            String committeeName = s.nextLine();
+            committeeName = s.nextLine();
             System.out.println("Enter the name of the head of the committee: ");
-            String headName = s.nextLine();
+            headName = s.nextLine();
             System.out.println("Enter committee member type (1 for First degree, 2 for Second degree, 3 for Doctor, 4 for Professor): ");
-            int memberType = readInt(s);
+            memberType = readInt(s);
             s.nextLine();
             c.inputCommittee(committeeName, headName, memberType);
             System.out.println("Committee added successfully.");
+        } catch (MultipleLecturersWithSameNameException e) {
+            try {
+                System.out.println(e.getMessage());
+                String headId = s.nextLine();
+                c.inputCommittee(committeeName, headName, headId, memberType);
+                System.out.println("Committee added successfully.");
+            } catch (CollegeException secondException) {
+                System.out.println(secondException.getMessage());
+            }
         } catch (CollegeException e) {
             System.out.println(e.getMessage());
         }
     }
 
     private static void addLecturerToCommittee(Scanner s, College c) {
+        String committeeName = "";
         try {
             System.out.println("Enter the name of the lecturer: ");
             String lecturerName = s.nextLine();
             System.out.println("Enter the name of the committee: ");
-            String committeeName = s.nextLine();
+            committeeName = s.nextLine();
             c.addLecturerToCommittee(lecturerName, committeeName);
             System.out.println("Lecturer added to committee successfully.");
+        } catch (MultipleLecturersWithSameNameException e) {
+            try {
+                System.out.println(e.getMessage());
+                String lecturerId = s.nextLine();
+                c.addLecturerToCommittee(e.getLecturerName(), lecturerId, committeeName);
+                System.out.println("Lecturer added to committee successfully.");
+            } catch (CollegeException secondException) {
+                System.out.println(secondException.getMessage());
+            }
         } catch (CollegeException e) {
             System.out.println(e.getMessage());
         }
     }
 
     private static void changeHeadOfCommittee(Scanner s, College c) {
+        String committeeName = "";
         try {
             System.out.println("Enter the name of the committee: ");
-            String committeeName = s.nextLine();
+            committeeName = s.nextLine();
             System.out.println("Enter the name of the new head of the committee: ");
             String lecturerName = s.nextLine();
             c.changeHeadOfCommittee(committeeName, lecturerName);
             System.out.println("Head of committee changed successfully.");
+        } catch (MultipleLecturersWithSameNameException e) {
+            try {
+                System.out.println(e.getMessage());
+                String lecturerId = s.nextLine();
+                c.changeHeadOfCommittee(committeeName, e.getLecturerName(), lecturerId);
+                System.out.println("Head of committee changed successfully.");
+            } catch (CollegeException secondException) {
+                System.out.println(secondException.getMessage());
+            }
         } catch (CollegeException e) {
             System.out.println(e.getMessage());
         }
     }
 
     private static void removeLecturerFromCommittee(Scanner s, College c) {
+        String committeeName = "";
         try {
             System.out.println("Enter the name of the committee: ");
-            String committeeName = s.nextLine();
+            committeeName = s.nextLine();
             System.out.println("Enter the name of the lecturer: ");
             String lecturerName = s.nextLine();
             c.removeLecturerFromCommittee(committeeName, lecturerName);
             System.out.println("Lecturer removed from committee successfully.");
+        } catch (MultipleLecturersWithSameNameException e) {
+            try {
+                System.out.println(e.getMessage());
+                String lecturerId = s.nextLine();
+                c.removeLecturerFromCommittee(committeeName, e.getLecturerName(), lecturerId);
+                System.out.println("Lecturer removed from committee successfully.");
+            } catch (CollegeException secondException) {
+                System.out.println(secondException.getMessage());
+            }
         } catch (CollegeException e) {
             System.out.println(e.getMessage());
         }
@@ -255,14 +297,28 @@ public class Program {
     private static void addLecturerToDepartment(Scanner s, College c) {
         System.out.println("Enter the name of the lecturer: ");
         String lecturerName = s.nextLine();
+        String departmentName = "";
         boolean finished = false;
         while (finished == false) {
             try {
                 System.out.println("Enter the name of the department: ");
-                String departmentName = s.nextLine();
+                departmentName = s.nextLine();
                 c.addLecturerToDepartment(lecturerName, departmentName);
                 System.out.println("Lecturer added to department successfully.");
                 finished = true;
+            } catch (MultipleLecturersWithSameNameException e) {
+                try {
+                    System.out.println(e.getMessage());
+                    String lecturerId = s.nextLine();
+                    c.addLecturerToDepartment(e.getLecturerName(), lecturerId, departmentName);
+                    System.out.println("Lecturer added to department successfully.");
+                    finished = true;
+                } catch (DepartmentNotFoundException secondException) {
+                    System.out.println(secondException.getMessage());
+                } catch (CollegeException secondException) {
+                    System.out.println(secondException.getMessage());
+                    finished = true;
+                }
             } catch (DepartmentNotFoundException e) {
                 System.out.println(e.getMessage());
             } catch (CollegeException e) {
@@ -290,27 +346,52 @@ public class Program {
     }
 
     private static void addArticle(Scanner s, College c) {
+        String articleName = "";
         try {
             System.out.println("Enter the name of the lecturer: ");
             String lecturerName = s.nextLine();
             System.out.println("Enter the name of the article: ");
-            String articleName = s.nextLine();
+            articleName = s.nextLine();
             c.addArticleToLecturer(lecturerName, articleName);
             System.out.println("Article added to lecturer successfully.");
+        } catch (MultipleLecturersWithSameNameException e) {
+            try {
+                System.out.println(e.getMessage());
+                String lecturerId = s.nextLine();
+                c.addArticleToLecturer(e.getLecturerName(), lecturerId, articleName);
+                System.out.println("Article added to lecturer successfully.");
+            } catch (CollegeException secondException) {
+                System.out.println(secondException.getMessage());
+            }
         } catch (CollegeException e) {
             System.out.println(e.getMessage());
         }
     }
 
     private static void compareArticleWriters(Scanner s, College c) {
-        try {
-            System.out.println("Enter the name of the first doctor or professor: ");
-            String firstName = s.nextLine();
-            System.out.println("Enter the name of the second doctor or professor: ");
-            String secondName = s.nextLine();
-            System.out.println(c.compareArticleWriters(firstName, secondName));
-        } catch (CollegeException e) {
-            System.out.println(e.getMessage());
+        System.out.println("Enter the name of the first doctor or professor: ");
+        String firstName = s.nextLine();
+        System.out.println("Enter the name of the second doctor or professor: ");
+        String secondName = s.nextLine();
+        String firstId = "";
+        String secondId = "";
+        boolean finished = false;
+        while (finished == false) {
+            try {
+                System.out.println(c.compareArticleWriters(firstName, firstId, secondName, secondId));
+                finished = true;
+            } catch (MultipleLecturersWithSameNameException e) {
+                System.out.println(e.getMessage());
+                String id = s.nextLine();
+                if (e.getLecturerName().equals(firstName)) {
+                    firstId = id;
+                } else {
+                    secondId = id;
+                }
+            } catch (CollegeException e) {
+                System.out.println(e.getMessage());
+                finished = true;
+            }
         }
     }
 
